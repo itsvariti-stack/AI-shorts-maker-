@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ShortsAI Agent — Viral YouTube Shorts Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --c:#00FFD1;--cp:#FF2D78;--cv:#8B5CF6;
+  --bg:#03030A;--bg2:#070712;--bg3:#0C0C1E;
+  --b:rgba(0,255,209,0.12);--t:rgba(240,240,255,0.85);--tm:rgba(240,240,255,0.4);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--t);font-family:'DM Sans',sans-serif;overflow-x:hidden;min-height:100vh}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:rgba(0,255,209,0.2);border-radius:2px}
+::selection{background:rgba(0,255,209,0.15);color:var(--c)}
+
+/* Layout */
+.grid-bg{background-image:linear-gradient(rgba(0,255,209,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,209,0.015) 1px,transparent 1px);background-size:40px 40px;position:fixed;inset:0;pointer-events:none;z-index:0}
+.app{display:flex;min-height:100vh;position:relative;z-index:1}
+
+/* Sidebar */
+.sidebar{width:240px;background:linear-gradient(180deg,var(--bg2) 0%,var(--bg) 100%);border-right:1px solid rgba(0,255,209,0.06);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh}
+.logo{padding:24px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(0,255,209,0.06)}
+.logo-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#00FFD1,#00BFAB);display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(0,255,209,0.35);font-size:16px;flex-shrink:0}
+.logo-name{font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:#fff;letter-spacing:0.02em}
+.logo-sub{font-family:'IBM Plex Mono',monospace;font-size:9px;color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:.15em;margin-top:1px}
+nav{padding:16px 12px;flex:1}
+.nav-section-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:rgba(255,255,255,0.2);text-transform:uppercase;letter-spacing:.2em;padding:0 8px;margin-bottom:10px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;cursor:pointer;font-size:13px;color:rgba(255,255,255,0.4);transition:all .2s;border:1px solid transparent;margin-bottom:2px;user-select:none}
+.nav-item:hover{color:rgba(255,255,255,0.75);background:rgba(255,255,255,0.04)}
+.nav-item.active{color:#00FFD1;background:rgba(0,255,209,0.07);border-color:rgba(0,255,209,0.15);text-shadow:0 0 12px rgba(0,255,209,0.35)}
+.nav-icon{font-size:15px;width:18px;text-align:center}
+.nav-chevron{margin-left:auto;opacity:.3;font-size:11px}
+.sidebar-footer{padding:12px;border-top:1px solid rgba(0,255,209,0.06)}
+.provider-box{background:rgba(0,255,209,0.04);border:1px solid rgba(0,255,209,0.1);border-radius:12px;padding:12px}
+.provider-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:.15em;margin-bottom:8px}
+.provider-item{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.provider-dot{width:6px;height:6px;border-radius:50%;background:#34D399;box-shadow:0 0 6px rgba(52,211,153,0.6);flex-shrink:0}
+.provider-name{font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,0.35)}
+
+/* Main */
+.main{margin-left:240px;flex:1;padding:40px 32px;max-width:calc(100% - 240px)}
+.page{display:none;animation:fadeIn .3s ease-out}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes pulseRing{0%,100%{box-shadow:0 0 0 0 rgba(0,255,209,.3)}50%{box-shadow:0 0 0 8px rgba(0,255,209,0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Typography */
+.page-header{margin-bottom:32px}
+.page-accent{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.accent-bar{width:5px;height:22px;border-radius:3px;background:var(--c);box-shadow:0 0 12px rgba(0,255,209,0.5)}
+.accent-bar.pink{background:var(--cp);box-shadow:0 0 12px rgba(255,45,120,0.5)}
+.accent-label{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.2em;color:rgba(255,255,255,0.3)}
+h1{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#fff;margin-bottom:6px}
+.page-desc{color:rgba(255,255,255,0.4);font-size:14px}
+
+/* Cards */
+.card{background:linear-gradient(135deg,rgba(12,12,30,.95),rgba(7,7,18,.95));border:1px solid rgba(255,255,255,0.05);border-radius:18px;padding:22px;backdrop-filter:blur(20px)}
+.card.glow{border-color:rgba(0,255,209,0.12);box-shadow:0 4px 40px rgba(0,0,0,.4),0 0 60px rgba(0,255,209,.04)}
+.card.pink-glow{border-color:rgba(255,45,120,0.12);box-shadow:0 4px 40px rgba(0,0,0,.4),0 0 60px rgba(255,45,120,.04)}
+
+/* Forms */
+label.lbl{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:rgba(255,255,255,0.35);margin-bottom:8px}
+input,textarea,select{width:100%;background:rgba(7,7,18,0.9);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:12px 16px;color:rgba(255,255,255,0.85);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:all .2s;resize:none;appearance:none}
+input::placeholder,textarea::placeholder{color:rgba(255,255,255,0.2)}
+input:focus,textarea:focus,select:focus{border-color:rgba(0,255,209,0.4);box-shadow:0 0 0 3px rgba(0,255,209,.07),0 0 20px rgba(0,255,209,.08)}
+select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.3)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:'Syne',sans-serif;font-weight:700;border-radius:14px;cursor:pointer;transition:all .25s;border:none;font-size:14px;padding:13px 22px}
+.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+.btn-glow{background:linear-gradient(135deg,#00FFD1,#00BFAB);color:#03030A;box-shadow:0 0 30px rgba(0,255,209,.35)}
+.btn-glow:hover{box-shadow:0 0 50px rgba(0,255,209,.55),0 0 80px rgba(0,255,209,.18);transform:translateY(-2px) scale(1.02)}
+.btn-glow.pink{background:linear-gradient(135deg,#FF2D78,#E8246A);box-shadow:0 0 30px rgba(255,45,120,.35)}
+.btn-glow.pink:hover{box-shadow:0 0 50px rgba(255,45,120,.55);transform:translateY(-2px) scale(1.02)}
+.btn-outline{background:rgba(0,255,209,.05);border:1px solid rgba(0,255,209,.25);color:#00FFD1;padding:11px 20px}
+.btn-outline:hover{border-color:rgba(0,255,209,.5);background:rgba(0,255,209,.1);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:rgba(255,255,255,.4);padding:10px 16px;font-size:13px;border-radius:10px}
+.btn-ghost:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.7)}
+.w-full{width:100%}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:10px}
+.badge-c{background:rgba(0,255,209,.08);border:1px solid rgba(0,255,209,.2);color:#00FFD1}
+.badge-p{background:rgba(255,45,120,.08);border:1px solid rgba(255,45,120,.2);color:#FF2D78}
+.badge-v{background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);color:#A78BFA}
+.badge-g{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);color:#34D399}
+
+/* Progress */
+.progress-track{height:6px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+.progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#00FFD1,#00BFAB);box-shadow:0 0 10px rgba(0,255,209,.5);transition:width .7s ease-out}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+.stat-card{position:relative;overflow:hidden}
+.stat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:16px}
+.stat-icon.c{background:rgba(0,255,209,.1)}
+.stat-icon.p{background:rgba(255,45,120,.1)}
+.stat-icon.v{background:rgba(139,92,246,.1)}
+.stat-value{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#fff;margin-bottom:2px}
+.stat-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.1em}
+
+/* Quick actions */
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+.quick-card{border-radius:18px;padding:22px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}
+.quick-card:hover{transform:translateY(-3px)}
+.quick-card.cyan-card{background:linear-gradient(135deg,rgba(0,255,209,.05),rgba(0,255,209,.02));border:1px solid rgba(0,255,209,.15)}
+.quick-card.pink-card{background:linear-gradient(135deg,rgba(255,45,120,.05),rgba(139,92,246,.03));border:1px solid rgba(255,45,120,.12)}
+.qc-hover-overlay{position:absolute;inset:0;opacity:0;transition:opacity .3s;pointer-events:none}
+.quick-card:hover .qc-hover-overlay{opacity:1}
+.cyan-card .qc-hover-overlay{background:radial-gradient(circle at top right,rgba(0,255,209,.08),transparent 70%)}
+.pink-card .qc-hover-overlay{background:radial-gradient(circle at top right,rgba(255,45,120,.08),transparent 70%)}
+.qc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;font-size:20px}
+.qc-icon.c{background:rgba(0,255,209,.1);border:1px solid rgba(0,255,209,.2)}
+.qc-icon.p{background:rgba(255,45,120,.1);border:1px solid rgba(255,45,120,.2)}
+.qc-title{font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:15px;margin-bottom:4px}
+.qc-desc{font-size:12px;color:rgba(255,255,255,.4);line-height:1.5}
+.qc-cta{margin-top:14px;font-family:'IBM Plex Mono',monospace;font-size:10px;display:flex;align-items:center;gap:6px}
+.cyan-card .qc-cta{color:rgba(0,255,209,.7)}
+.pink-card .qc-cta{color:rgba(255,45,120,.7)}
+
+/* Project list */
+.project-item{display:flex;align-items:center;gap:14px;padding:16px;border-radius:14px;border:1px solid rgba(255,255,255,.04);background:rgba(12,12,30,.5);cursor:pointer;transition:all .2s;margin-bottom:10px}
+.project-item:hover{border-color:rgba(255,255,255,.09);transform:translateY(-1px)}
+.proj-thumb{width:46px;height:76px;border-radius:10px;overflow:hidden;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.06);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px}
+.proj-info{flex:1;min-width:0}
+.proj-title{font-family:'Syne',sans-serif;font-weight:600;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+.proj-hook{font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:8px}
+.proj-meta{display:flex;align-items:center;gap:8px}
+.proj-actions{display:flex;gap:6px;opacity:0;transition:opacity .2s}
+.project-item:hover .proj-actions{opacity:1}
+.proj-btn{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all .2s;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.35)}
+.proj-btn:hover{background:rgba(0,255,209,.1);border-color:rgba(0,255,209,.25);color:#00FFD1}
+.proj-btn.del:hover{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);color:#EF4444}
+
+/* Score ring */
+.score-ring-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.score-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.1em}
+
+/* Generation overlay */
+.gen-overlay{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(3,3,10,.92);backdrop-filter:blur(12px)}
+.gen-overlay.visible{display:flex}
+.gen-box{width:320px;text-align:center}
+.gen-spinner{width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,#00FFD1,#00BFAB);box-shadow:0 0 40px rgba(0,255,209,.5);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:26px}
+.gen-spinner-icon{animation:spin 1.2s linear infinite;display:inline-block}
+.gen-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#fff;margin-bottom:4px}
+.gen-step{font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(255,255,255,.4);margin-bottom:24px;min-height:16px}
+.gen-dots{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:16px}
+.gen-dot{height:4px;border-radius:999px;background:rgba(255,255,255,.1);transition:all .5s}
+.gen-dot.active{background:#00FFD1;box-shadow:0 0 8px rgba(0,255,209,.5)}
+.gen-hint{font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.2);margin-top:16px}
+
+/* Results */
+.result-section{animation:slideUp .4s ease-out;margin-bottom:20px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff;display:flex;align-items:center;gap:8px}
+.section-icon{font-size:15px}
+
+.hook-item{border-radius:12px;padding:14px;cursor:pointer;transition:all .2s;margin-bottom:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2)}
+.hook-item:hover{border-color:rgba(255,255,255,.12)}
+.hook-item.selected{border-color:rgba(0,255,209,.4);background:rgba(0,255,209,.05)}
+.hook-selector{width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(255,255,255,.2);margin-right:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.hook-item.selected .hook-selector{background:#00FFD1;border-color:#00FFD1}
+.hook-text{font-size:13px;color:rgba(255,255,255,.8);line-height:1.5;flex:1}
+
+.scene-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.scene-card{border-radius:12px;border:1px solid rgba(255,255,255,.06);padding:14px;background:rgba(0,0,0,.25);transition:all .2s}
+.scene-card:hover{border-color:rgba(0,255,209,.2);transform:translateY(-2px)}
+.scene-num{width:26px;height:26px;border-radius:8px;background:rgba(0,255,209,.1);border:1px solid rgba(0,255,209,.2);color:#00FFD1;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.scene-text{font-size:12px;color:rgba(255,255,255,.65);line-height:1.5;margin-bottom:8px}
+.scene-prompt{font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.25);font-style:italic;line-height:1.4}
+
+.script-box{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:18px;font-size:13px;color:rgba(255,255,255,.72);line-height:1.85;white-space:pre-wrap}
+
+.subtitle-chip{display:inline-flex;padding:4px 9px;border-radius:8px;font-size:11px;margin:3px;cursor:default;transition:all .2s}
+.subtitle-chip.keyword{background:rgba(0,255,209,.12);border:1px solid rgba(0,255,209,.25);color:#00FFD1}
+.subtitle-chip.normal{background:rgba(255,255,255,.05);color:rgba(255,255,255,.5)}
+
+.hashtag{display:inline-flex;padding:4px 10px;border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:10px;background:rgba(0,255,209,.08);border:1px solid rgba(0,255,209,.2);color:#00FFD1;margin:3px;cursor:pointer;transition:all .2s}
+.hashtag:hover{background:rgba(0,255,209,.15)}
+
+.title-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);margin-bottom:8px}
+.title-text{font-size:13px;color:rgba(255,255,255,.8);flex:1}
+.copy-btn{font-size:13px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .2s;color:rgba(255,255,255,.3);background:none;border:none}
+.copy-btn:hover{color:#00FFD1;background:rgba(0,255,209,.08)}
+
+/* Mode toggle */
+.mode-toggle{display:flex;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+.mode-btn{flex:1;padding:10px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;transition:all .2s;background:none;border:none;color:rgba(255,255,255,.4)}
+.mode-btn.active{background:#00FFD1;color:#03030A;font-weight:700}
+
+/* Tab bar */
+.tabs{display:flex;padding:4px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);margin-bottom:20px}
+.tab{flex:1;padding:9px;border-radius:10px;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s;text-align:center;color:rgba(255,255,255,.3);border:none;background:none;display:flex;align-items:center;justify-content:center;gap:6px}
+.tab.active{background:#00FFD1;color:#03030A;font-weight:700;box-shadow:0 0 15px rgba(0,255,209,.3)}
+.tab-content{display:none}.tab-content.active{display:block;animation:fadeIn .25s ease-out}
+
+/* Export card */
+.export-card{text-align:center;padding:32px 22px;border:1px solid rgba(0,255,209,.2);border-radius:18px;background:linear-gradient(135deg,rgba(0,255,209,.05),rgba(0,255,209,.02))}
+.export-icon{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#00FFD1,#00BFAB);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 16px;box-shadow:0 0 30px rgba(0,255,209,.4)}
+
+/* Image upload */
+.drop-zone{border:2px dashed rgba(255,255,255,.1);border-radius:18px;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;text-align:center;padding:24px}
+.drop-zone:hover,.drop-zone.drag{border-color:rgba(255,45,120,.5);background:rgba(255,45,120,.04);transform:scale(1.01)}
+.drop-icon{width:52px;height:52px;border-radius:14px;background:rgba(255,45,120,.1);border:1px solid rgba(255,45,120,.2);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px}
+.drop-img-preview{width:100%;border-radius:14px;overflow:hidden;position:relative}
+.drop-img-preview img{width:100%;max-height:260px;object-fit:cover}
+.preview-frame{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.frame-inner{width:55%;height:88%;border:2px solid rgba(255,45,120,.45);border-radius:12px;box-shadow:0 0 20px rgba(255,45,120,.2)}
+.preview-label{position:absolute;bottom:10px;left:10px;font-family:'IBM Plex Mono',monospace;font-size:9px;background:rgba(0,0,0,.7);padding:3px 8px;border-radius:6px;color:#FF2D78}
+
+/* Motion buttons */
+.motion-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.motion-btn{padding:10px;border-radius:10px;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s;text-align:left;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.4)}
+.motion-btn:hover{color:rgba(255,255,255,.7);background:rgba(255,255,255,.07)}
+.motion-btn.active{background:#FF2D78;color:#fff;border-color:#FF2D78;box-shadow:0 0 15px rgba(255,45,120,.4);font-weight:700}
+
+/* Dashboard project list */
+.section-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sh-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:#fff}
+.sh-count{font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.25)}
+
+/* Utility */
+.flex{display:flex}.items-center{align-items:center}.items-start{align-items:flex-start}
+.justify-between{justify-content:space-between}.gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}
+.mb-2{margin-bottom:8px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:16px}.mb-5{margin-bottom:20px}.mb-6{margin-bottom:24px}
+.mt-3{margin-top:12px}.mt-4{margin-top:16px}
+.text-sm{font-size:13px}.text-xs{font-family:'IBM Plex Mono',monospace;font-size:10px}
+.text-muted{color:rgba(255,255,255,.4)}.text-c{color:#00FFD1}.text-p{color:#FF2D78}
+.divider{height:1px;background:rgba(255,255,255,.06);margin:16px 0}
+.error-box{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px 14px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#EF4444;margin-bottom:14px}
+.success-box{background:rgba(0,255,209,.08);border:1px solid rgba(0,255,209,.2);border-radius:10px;padding:12px 14px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#00FFD1;margin-bottom:14px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.col{display:flex;flex-direction:column;gap:16px}
+</style>
+</head>
+<body>
+
+<!-- Grid background -->
+<div class="grid-bg"></div>
+
+<!-- Generation overlay -->
+<div class="gen-overlay" id="genOverlay">
+  <div class="gen-box">
+    <div class="gen-spinner"><span class="gen-spinner-icon">⚡</span></div>
+    <div class="gen-title">AI Agent Running</div>
+    <div class="gen-step" id="genStep">Initializing...</div>
+    <div class="progress-track">
+      <div class="progress-fill" id="genProgressFill" style="width:0%"></div>
+    </div>
+    <div class="gen-dots" id="genDots">
+      <div class="gen-dot"></div><div class="gen-dot"></div><div class="gen-dot"></div>
+      <div class="gen-dot"></div><div class="gen-dot"></div><div class="gen-dot"></div><div class="gen-dot"></div>
+    </div>
+    <div class="gen-hint">This may take 30–120 seconds with real API keys</div>
+  </div>
+</div>
+
+<div class="app">
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-name">ShortsAI</div>
+        <div class="logo-sub">Agent v1.0</div>
+      </div>
+    </div>
+    <nav>
+      <div class="nav-section-label">Navigation</div>
+      <div class="nav-item active" onclick="showPage('dashboard',this)">
+        <span class="nav-icon">⊞</span> Dashboard <span class="nav-chevron">›</span>
+      </div>
+      <div class="nav-item" onclick="showPage('text-to-short',this)">
+        <span class="nav-icon">✦</span> Text → Short <span class="nav-chevron">›</span>
+      </div>
+      <div class="nav-item" onclick="showPage('image-to-short',this)">
+        <span class="nav-icon">◈</span> Image → Short <span class="nav-chevron">›</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="provider-box">
+        <div class="provider-label">AI Providers</div>
+        <div class="provider-item"><div class="provider-dot"></div><div class="provider-name">OpenAI GPT-4o</div></div>
+        <div class="provider-item"><div class="provider-dot"></div><div class="provider-name">ElevenLabs TTS</div></div>
+        <div class="provider-item"><div class="provider-dot"></div><div class="provider-name">Replicate Video</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main">
+
+    <!-- ════ DASHBOARD ════ -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-accent"><div class="accent-bar"></div><div class="accent-label">Control Center</div></div>
+        <h1>Dashboard</h1>
+        <div class="page-desc">Manage and launch your AI-powered Shorts.</div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="card stat-card">
+          <div class="stat-icon c">▶</div>
+          <div class="stat-value" id="stat-videos">3</div>
+          <div class="stat-label">Videos Created</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-icon p">↗</div>
+          <div class="stat-value">87</div>
+          <div class="stat-label">Avg Viral Score</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-icon v">≡</div>
+          <div class="stat-value">34</div>
+          <div class="stat-label">Total Scenes</div>
+        </div>
+      </div>
+
+      <div class="quick-grid">
+        <div class="quick-card cyan-card" onclick="showPage('text-to-short', document.querySelectorAll('.nav-item')[1])">
+          <div class="qc-hover-overlay"></div>
+          <div class="qc-icon c">✦</div>
+          <div class="qc-title">Text → Short</div>
+          <div class="qc-desc">Type a topic. Get a viral Short with script, visuals, voice & captions.</div>
+          <div class="qc-cta">Generate now <span>→</span></div>
+        </div>
+        <div class="quick-card pink-card" onclick="showPage('image-to-short', document.querySelectorAll('.nav-item')[2])">
+          <div class="qc-hover-overlay"></div>
+          <div class="qc-icon p">◈</div>
+          <div class="qc-title">Image → Short</div>
+          <div class="qc-desc">Upload an image. AI adds motion, narration and captions automatically.</div>
+          <div class="qc-cta">Upload & animate <span>→</span></div>
+        </div>
+      </div>
+
+      <div class="section-heading">
+        <div class="sh-title">Recent Projects</div>
+        <div class="sh-count" id="proj-count">3 videos</div>
+      </div>
+
+      <div id="projectList">
+        <div class="project-item" onclick="showPage('text-to-short',document.querySelectorAll('.nav-item')[1])">
+          <div class="proj-thumb">🚀</div>
+          <div class="proj-info">
+            <div class="proj-title">Walking to Mars would take 9 months straight</div>
+            <div class="proj-hook">"What if you started walking to Mars today..."</div>
+            <div class="proj-meta">
+              <span class="badge badge-c">Text</span>
+              <span class="text-xs text-muted">🕐 Jan 15, 2025</span>
+            </div>
+          </div>
+          <div class="proj-actions">
+            <div class="proj-btn">👁</div>
+            <div class="proj-btn del" onclick="event.stopPropagation();this.closest('.project-item').remove();updateProjCount()">🗑</div>
+          </div>
+        </div>
+        <div class="project-item" onclick="showPage('text-to-short',document.querySelectorAll('.nav-item')[1])">
+          <div class="proj-thumb">🧬</div>
+          <div class="proj-info">
+            <div class="proj-title">Your body replaces every cell in 7 years</div>
+            <div class="proj-hook">"You are not the same person you were 7 years ago..."</div>
+            <div class="proj-meta">
+              <span class="badge badge-c">Text</span>
+              <span class="text-xs text-muted">🕐 Jan 12, 2025</span>
+            </div>
+          </div>
+          <div class="proj-actions">
+            <div class="proj-btn">👁</div>
+            <div class="proj-btn del" onclick="event.stopPropagation();this.closest('.project-item').remove();updateProjCount()">🗑</div>
+          </div>
+        </div>
+        <div class="project-item" onclick="showPage('image-to-short',document.querySelectorAll('.nav-item')[2])">
+          <div class="proj-thumb">🌆</div>
+          <div class="proj-info">
+            <div class="proj-title">Abandoned city at midnight — cinematic short</div>
+            <div class="proj-hook">"No one knows why everyone left this city overnight..."</div>
+            <div class="proj-meta">
+              <span class="badge badge-p">Image</span>
+              <span class="text-xs text-muted">🕐 Jan 10, 2025</span>
+            </div>
+          </div>
+          <div class="proj-actions">
+            <div class="proj-btn">👁</div>
+            <div class="proj-btn del" onclick="event.stopPropagation();this.closest('.project-item').remove();updateProjCount()">🗑</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ TEXT TO SHORT ════ -->
+    <div class="page" id="page-text-to-short">
+      <div class="page-header">
+        <div class="page-accent"><div class="accent-bar"></div><div class="accent-label">AI Agent</div></div>
+        <h1>Text → Short</h1>
+        <div class="page-desc">Turn any topic into a viral YouTube Short in minutes.</div>
+      </div>
+
+      <div class="card glow mb-4">
+        <div class="mb-4">
+          <label class="lbl">Topic or Idea</label>
+          <textarea id="topicInput" placeholder="e.g. Walking to Mars would take 9 months straight..." rows="2" style="padding-right:40px"></textarea>
+        </div>
+        <div class="row mb-4">
+          <div>
+            <label class="lbl">Content Style</label>
+            <select id="styleSelect">
+              <option value="dramatic">🎭 Dramatic</option>
+              <option value="educational">🎓 Educational</option>
+              <option value="shocking">⚡ Shocking</option>
+              <option value="motivational">🔥 Motivational</option>
+              <option value="storytelling">📖 Storytelling</option>
+            </select>
+          </div>
+          <div>
+            <label class="lbl">Generation Mode</label>
+            <div class="mode-toggle">
+              <button class="mode-btn active" onclick="setMode('auto',this)">⚡ Auto</button>
+              <button class="mode-btn" onclick="setMode('manual',this)">🎛 Manual</button>
+            </div>
+          </div>
+        </div>
+        <div id="ttsError" class="error-box" style="display:none"></div>
+        <div class="flex gap-3">
+          <button class="btn btn-glow w-full" onclick="startGeneration()">⚡ Generate Full Short</button>
+          <button class="btn btn-ghost" onclick="resetTTS()" style="white-space:nowrap">↺ Reset</button>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="ttsResults" style="display:none">
+        <!-- Hooks -->
+        <div class="card glow result-section mb-4">
+          <div class="section-header">
+            <div class="section-title"><span class="section-icon">⚡</span> Viral Hooks <span class="badge badge-c ml-2">3 generated</span></div>
+          </div>
+          <div id="hooksContainer"></div>
+          <div class="divider"></div>
+          <button class="btn btn-outline w-full" onclick="scrollToNext('scriptSection')">Write Script →</button>
+        </div>
+
+        <!-- Script -->
+        <div class="card glow result-section mb-4" id="scriptSection">
+          <div class="section-header">
+            <div class="section-title"><span class="section-icon">🎬</span> Script</div>
+            <div class="flex gap-2 items-center">
+              <div class="score-ring-wrap">
+                <svg width="52" height="52" style="transform:rotate(-90deg)">
+                  <circle cx="26" cy="26" r="20" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="5"/>
+                  <circle cx="26" cy="26" r="20" fill="none" stroke="#00FFD1" stroke-width="5"
+                    stroke-dasharray="125.66" stroke-dashoffset="16" stroke-linecap="round"
+                    style="filter:drop-shadow(0 0 6px #00FFD1);transition:stroke-dashoffset 1s"/>
+                </svg>
+                <div style="margin-top:-38px;text-align:center;position:relative;z-index:1">
+                  <div style="font-family:Syne;font-weight:800;font-size:13px;color:#fff">87</div>
+                </div>
+                <div class="score-label">Viral</div>
+              </div>
+              <button class="copy-btn" onclick="copyText(document.getElementById('scriptContent').innerText,this)">⎘</button>
+            </div>
+          </div>
+          <div class="script-box" id="scriptContent"></div>
+        </div>
+
+        <!-- Scenes -->
+        <div class="card result-section mb-4">
+          <div class="section-header">
+            <div class="section-title"><span class="section-icon">▶</span> Scene Breakdown <span class="badge badge-p ml-2" id="sceneCount">10 scenes</span></div>
+          </div>
+          <div class="scene-grid" id="scenesContainer"></div>
+        </div>
+
+        <!-- Voice -->
+        <div class="card glow result-section mb-4">
+          <div class="section-header">
+            <div class="section-title"><span class="section-icon">🎙</span> Voiceover</div>
+          </div>
+          <div style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.15);border-radius:12px;padding:16px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(255,255,255,.5);margin-bottom:8px">
+              🔑 Add your ElevenLabs API key in <code style="color:#A78BFA">.env</code> for real voiceover generation.
+            </div>
+            <div style="display:flex;gap:16px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.35)">
+              <span>🎙 elevenlabs</span><span>⏱ ~30s estimated</span><span>📝 24 subtitle chunks</span>
+            </div>
+          </div>
+          <div class="mt-3">
+            <div class="text-xs text-muted mb-2">Subtitle Preview</div>
+            <div id="subtitlePreview"></div>
+          </div>
+        </div>
+
+        <!-- Metadata -->
+        <div class="card glow result-section mb-4">
+          <div class="section-header">
+            <div class="section-title"><span class="section-icon">↗</span> Viral Metadata</div>
+          </div>
+          <div class="mb-3">
+            <div class="text-xs text-muted mb-2" style="letter-spacing:.1em">TITLES</div>
+            <div id="titlesContainer"></div>
+          </div>
+          <div class="mb-3">
+            <div class="flex justify-between items-center mb-2">
+              <div class="text-xs text-muted" style="letter-spacing:.1em">DESCRIPTION</div>
+              <button class="copy-btn" onclick="copyText(document.getElementById('descContent').innerText,this)">⎘</button>
+            </div>
+            <div id="descContent" style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.7;padding:12px;background:rgba(0,0,0,.3);border-radius:10px;border:1px solid rgba(255,255,255,.05)"></div>
+          </div>
+          <div>
+            <div class="text-xs text-muted mb-2" style="letter-spacing:.1em">HASHTAGS</div>
+            <div id="hashtagsContainer"></div>
+          </div>
+        </div>
+
+        <!-- Export -->
+        <div class="export-card result-section mb-4">
+          <div class="export-icon">🎬</div>
+          <div style="font-family:Syne;font-weight:800;font-size:18px;color:#fff;margin-bottom:6px">Short is Ready! 🎉</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:20px">All components generated. Export your vertical 9:16 MP4.</div>
+          <button class="btn btn-glow" onclick="alert('Export requires FFmpeg on the server. See README for setup.')">⬇ Export MP4 (1080×1920)</button>
+          <div style="margin-top:12px;font-family:IBM Plex Mono,monospace;font-size:10px;color:rgba(255,255,255,.2)">Requires FFmpeg on the server for full video assembly</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ IMAGE TO SHORT ════ -->
+    <div class="page" id="page-image-to-short">
+      <div class="page-header">
+        <div class="page-accent"><div class="accent-bar pink"></div><div class="accent-label">AI Agent</div></div>
+        <h1>Image → Short</h1>
+        <div class="page-desc">Upload an image — AI adds motion, narration & captions.</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:24px">
+        <!-- Left -->
+        <div class="col">
+          <div>
+            <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageUpload(this)">
+            <div class="drop-zone" id="dropZone"
+              onclick="document.getElementById('imageInput').click()"
+              ondragover="event.preventDefault();this.classList.add('drag')"
+              ondragleave="this.classList.remove('drag')"
+              ondrop="handleDrop(event)">
+              <div id="dropZoneContent">
+                <div class="drop-icon">📤</div>
+                <div style="font-family:Syne;font-weight:700;font-size:14px;color:rgba(255,255,255,.6);margin-bottom:4px">Drop image here</div>
+                <div style="font-size:12px;color:rgba(255,255,255,.3)">JPG, PNG, WEBP · Max 20MB</div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="lbl">Topic / Context (optional)</label>
+            <textarea id="imgTopic" placeholder="e.g. A mysterious abandoned city at midnight..." rows="2"></textarea>
+          </div>
+
+          <div>
+            <label class="lbl">Motion Effect</label>
+            <div class="motion-grid" id="motionGrid">
+              <button class="motion-btn" onclick="setMotion(this)">🔍 Zoom In</button>
+              <button class="motion-btn" onclick="setMotion(this)">🔭 Zoom Out</button>
+              <button class="motion-btn" onclick="setMotion(this)">➡️ Pan Right</button>
+              <button class="motion-btn" onclick="setMotion(this)">⬅️ Pan Left</button>
+              <button class="motion-btn" onclick="setMotion(this)">✨ Parallax</button>
+              <button class="motion-btn active" onclick="setMotion(this)">🎬 Cinematic</button>
+            </div>
+          </div>
+
+          <div id="imgError" class="error-box" style="display:none"></div>
+
+          <button class="btn btn-glow pink w-full" onclick="startImgGeneration()">
+            ⚡ Animate & Generate Short
+          </button>
+        </div>
+
+        <!-- Right: Results -->
+        <div>
+          <div id="imgPlaceholder" style="height:100%;min-height:350px;border:1px dashed rgba(255,255,255,.07);border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px">
+            <div style="font-size:36px;margin-bottom:12px;opacity:.25">◈</div>
+            <div style="font-family:IBM Plex Mono,monospace;font-size:12px;color:rgba(255,255,255,.25)">Results will appear here</div>
+            <div style="font-family:IBM Plex Mono,monospace;font-size:10px;color:rgba(255,255,255,.15);margin-top:4px">Upload an image and click generate</div>
+          </div>
+
+          <div id="imgResults" style="display:none">
+            <div class="card pink-glow mb-4">
+              <div style="font-family:IBM Plex Mono,monospace;font-size:10px;color:rgba(255,255,255,.3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.15em">Viral Hook</div>
+              <div id="imgHook" style="font-family:Syne;font-weight:700;font-size:15px;color:#fff;line-height:1.4"></div>
+            </div>
+            <div class="card mb-4">
+              <div class="flex items-center gap-2 mb-3">
+                <span>🎬</span>
+                <span style="font-family:IBM Plex Mono,monospace;font-size:10px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.15em">Script</span>
+              </div>
+              <div id="imgScript" style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.8"></div>
+            </div>
+            <div class="card mb-4">
+              <div style="font-family:IBM Plex Mono,monospace;font-size:10px;color:rgba(255,255,255,.3);margin-bottom:10px;text-transform:uppercase;letter-spacing:.15em">Titles</div>
+              <div id="imgTitles"></div>
+              <div id="imgHashtags" style="margin-top:10px"></div>
+            </div>
+            <button class="btn btn-glow pink w-full" onclick="alert('Export requires FFmpeg on the server. See README for setup.')">
+              🎬 Export Video
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let currentMode = 'auto';
+let projCount = 3;
+
+// ── Navigation ─────────────────────────────────────────────────
+function showPage(id, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id)?.classList.add('active');
+  navEl?.classList.add('active');
+}
+
+function updateProjCount() {
+  const c = document.querySelectorAll('.project-item').length;
+  document.getElementById('proj-count').textContent = c + ' video' + (c !== 1 ? 's' : '');
+  document.getElementById('stat-videos').textContent = c;
+}
+
+function setMode(m, btn) {
+  currentMode = m;
+  btn.closest('.mode-toggle').querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const genBtn = document.querySelector('#page-text-to-short .btn-glow');
+  genBtn.textContent = m === 'auto' ? '⚡ Generate Full Short' : '✦ Generate Hooks';
+}
+
+// ── Generation overlay ─────────────────────────────────────────
+const STEPS = [
+  {p:14, l:'Analyzing viral angles...'},
+  {p:28, l:'Crafting viral hook...'},
+  {p:42, l:'Writing retention-optimized script...'},
+  {p:57, l:'Generating cinematic visuals...'},
+  {p:71, l:'Creating AI voiceover...'},
+  {p:85, l:'Optimizing for virality...'},
+  {p:96, l:'Saving project...'},
+  {p:100, l:'Complete! 🎉'},
+];
+
+function showOverlay() { document.getElementById('genOverlay').classList.add('visible'); }
+function hideOverlay() { document.getElementById('genOverlay').classList.remove('visible'); }
+
+function animateOverlay(callback) {
+  showOverlay();
+  let i = 0;
+  const fill = document.getElementById('genProgressFill');
+  const step = document.getElementById('genStep');
+  const dots = document.getElementById('genDots').children;
+
+  function next() {
+    if (i >= STEPS.length) { hideOverlay(); callback(); return; }
+    const s = STEPS[i];
+    fill.style.width = s.p + '%';
+    step.textContent = s.l;
+    Array.from(dots).forEach((d, di) => {
+      d.classList.toggle('active', di < Math.floor((s.p / 100) * 7));
+    });
+    i++;
+    setTimeout(next, i < STEPS.length - 1 ? 800 + Math.random() * 400 : 500);
+  }
+  next();
+}
+
+// ── Text-to-Short ──────────────────────────────────────────────
+const MOCK = {
+  hooks: [
+    { text: "What if I told you walking to Mars would take you 9 months non-stop?", type: "shock" },
+    { text: "You won't believe how long it actually takes to walk to another planet.", type: "curiosity" },
+    { text: "Imagine starting to walk to Mars today. Your great-grandchildren would finish the journey.", type: "storytelling" },
+  ],
+  script: `Imagine you start walking to Mars right now.
+
+You'd walk 24 hours a day, non-stop — no breaks, no sleep, no food.
+
+At 3 miles per hour? It would take you over 4,000 years.
+
+But here's the wild part...
+
+Even with a spacecraft at 12,000 mph — you're looking at 9 MONTHS.
+
+And that's on a GOOD day, when Earth and Mars are aligned.
+
+The truth is, space isn't big. It's incomprehensibly massive.
+
+And yet — NASA is planning to send humans there by 2040.
+
+Would YOU volunteer for that mission?
+
+Drop a 🚀 if you'd go.`,
+  scenes: [
+    { num: 1, text: "Imagine you start walking to Mars right now.", emotion: "wonder", duration: 3, prompt: "Person standing on Earth looking up at the red sky, cinematic, 9:16" },
+    { num: 2, text: "You'd walk 24 hours a day, non-stop — no breaks, no sleep, no food.", emotion: "tension", duration: 3, prompt: "Lone silhouette walking endlessly through desert, dramatic backlighting" },
+    { num: 3, text: "At 3 miles per hour? It would take you over 4,000 years.", emotion: "shock", duration: 3, prompt: "Ancient hourglass with galaxies inside, time-lapse effect, cinematic" },
+    { num: 4, text: "But here's the wild part...", emotion: "tension", duration: 2, prompt: "Close-up of shocked human eye reflecting stars, dramatic" },
+    { num: 5, text: "Even with a spacecraft at 12,000 mph — you're looking at 9 MONTHS.", emotion: "shock", duration: 3, prompt: "Rocket speeding through space toward red planet, neon trails" },
+    { num: 6, text: "And that's on a GOOD day, when Earth and Mars are aligned.", emotion: "reveal", duration: 3, prompt: "Solar system orbital paths glowing, Earth and Mars aligned" },
+    { num: 7, text: "The truth is, space isn't big. It's incomprehensibly massive.", emotion: "wonder", duration: 3, prompt: "Human floating in black void of space, tiny against infinite cosmos" },
+    { num: 8, text: "And yet — NASA is planning to send humans there by 2040.", emotion: "excitement", duration: 3, prompt: "Futuristic NASA spaceship interior, astronauts preparing, lens flare" },
+    { num: 9, text: "Would YOU volunteer for that mission?", emotion: "excitement", duration: 2, prompt: "Mars surface at sunset, human footprint, dramatic orange sky" },
+    { num: 10, text: "Drop a 🚀 if you'd go.", emotion: "excitement", duration: 2, prompt: "Rocket launch trail against night sky, vertical 9:16, cinematic" },
+  ],
+  subtitles: [
+    { text: "Imagine you start", keyword: false },
+    { text: "walking to MARS", keyword: true },
+    { text: "right now.", keyword: false },
+    { text: "24 hours a day", keyword: false },
+    { text: "NON-STOP", keyword: true },
+    { text: "4,000 YEARS", keyword: true },
+    { text: "But here's", keyword: false },
+    { text: "the WILD part", keyword: true },
+    { text: "9 MONTHS", keyword: true },
+    { text: "INCOMPREHENSIBLY", keyword: true },
+    { text: "massive.", keyword: false },
+    { text: "NASA 2040", keyword: true },
+  ],
+  titles: [
+    "Walking to Mars Would Take 4,000 Years 😱 #space #facts",
+    "You'll Never Believe How Far Mars Really Is 🚀",
+    "NASA's INSANE Mars Plan That Most People Don't Know About",
+  ],
+  description: "Did you know that walking to Mars at 3mph would take over 4,000 years? Even NASA's fastest spacecraft takes 9 months to get there. Space is more vast than our minds can comprehend — and yet humans are planning to go there by 2040. Would you volunteer? 🚀\n\n#space #mars #nasa #science #shorts #viral #facts #universe",
+  hashtags: ["#space", "#mars", "#nasa", "#shorts", "#viral", "#science", "#facts", "#universe", "#mindblown", "#fyp"],
+};
+
+function startGeneration() {
+  const topic = document.getElementById('topicInput').value.trim();
+  if (!topic) {
+    const e = document.getElementById('ttsError');
+    e.style.display = 'block';
+    e.textContent = '⚠ Please enter a topic first.';
+    setTimeout(() => e.style.display = 'none', 3000);
+    return;
+  }
+  animateOverlay(renderResults);
+}
+
+function renderResults() {
+  document.getElementById('ttsResults').style.display = 'block';
+
+  // Hooks
+  const hooksC = document.getElementById('hooksContainer');
+  hooksC.innerHTML = MOCK.hooks.map((h, i) => `
+    <div class="hook-item ${i===0?'selected':''}" onclick="selectHook(this)">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div class="hook-selector">${i===0?'<div style="width:8px;height:8px;border-radius:50%;background:#03030A"></div>':''}</div>
+        <div class="hook-text">${h.text}</div>
+        <button class="copy-btn" onclick="event.stopPropagation();copyText('${h.text.replace(/'/g,"\\'")}',this)">⎘</button>
+      </div>
+      <div style="margin-top:8px;margin-left:28px"><span class="badge badge-v">${h.type}</span></div>
+    </div>
+  `).join('');
+
+  // Script
+  document.getElementById('scriptContent').textContent = MOCK.script;
+
+  // Scenes
+  const scenesC = document.getElementById('scenesContainer');
+  const EMOTION_COLOR = {wonder:'badge-c',tension:'badge-v',shock:'badge-p',reveal:'badge-g',excitement:'badge-g'};
+  scenesC.innerHTML = MOCK.scenes.map(s => `
+    <div class="scene-card">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <div class="scene-num">${s.num}</div>
+        <div style="flex:1">
+          <div class="scene-text">${s.text}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+            <span style="font-family:IBM Plex Mono;font-size:9px;color:rgba(255,255,255,.25)">⏱ ${s.duration}s</span>
+            <span class="badge ${EMOTION_COLOR[s.emotion]||'badge-v'}" style="font-size:9px;padding:2px 7px;text-transform:capitalize">${s.emotion}</span>
+          </div>
+          <div class="scene-prompt">🎨 ${s.prompt}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('sceneCount').textContent = MOCK.scenes.length + ' scenes';
+
+  // Subtitles
+  const subC = document.getElementById('subtitlePreview');
+  subC.innerHTML = MOCK.subtitles.map(s => `<span class="subtitle-chip ${s.keyword?'keyword':'normal'}">${s.text}</span>`).join('');
+
+  // Metadata
+  const titlesC = document.getElementById('titlesContainer');
+  titlesC.innerHTML = MOCK.titles.map((t,i) => `
+    <div class="title-row">
+      <div class="title-text">${t}</div>
+      <button class="copy-btn" onclick="copyText('${t.replace(/'/g,"\\'")}',this)">⎘</button>
+    </div>
+  `).join('');
+  document.getElementById('descContent').textContent = MOCK.description;
+  const hashC = document.getElementById('hashtagsContainer');
+  hashC.innerHTML = MOCK.hashtags.map(h => `<span class="hashtag" onclick="copyText('${h}',this)">${h}</span>`).join('');
+
+  // Add to project list
+  const topic = document.getElementById('topicInput').value.trim();
+  const projList = document.getElementById('projectList');
+  const newProj = document.createElement('div');
+  newProj.className = 'project-item';
+  newProj.innerHTML = `
+    <div class="proj-thumb">✦</div>
+    <div class="proj-info">
+      <div class="proj-title">${topic}</div>
+      <div class="proj-hook">"${MOCK.hooks[0].text.substring(0,60)}..."</div>
+      <div class="proj-meta">
+        <span class="badge badge-c">Text</span>
+        <span class="text-xs text-muted">🕐 Just now</span>
+      </div>
+    </div>
+    <div class="proj-actions">
+      <div class="proj-btn">👁</div>
+      <div class="proj-btn del" onclick="event.stopPropagation();this.closest('.project-item').remove();updateProjCount()">🗑</div>
+    </div>
+  `;
+  projList.prepend(newProj);
+  projCount++;
+  updateProjCount();
+
+  setTimeout(() => document.getElementById('ttsResults').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+}
+
+function resetTTS() {
+  document.getElementById('ttsResults').style.display = 'none';
+  document.getElementById('topicInput').value = '';
+}
+
+function selectHook(el) {
+  document.querySelectorAll('.hook-item').forEach(h => {
+    h.classList.remove('selected');
+    h.querySelector('.hook-selector').innerHTML = '';
+  });
+  el.classList.add('selected');
+  el.querySelector('.hook-selector').innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:#03030A"></div>';
+}
+
+function scrollToNext(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// ── Image to Short ─────────────────────────────────────────────
+function setMotion(btn) {
+  document.querySelectorAll('.motion-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function handleImageUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  showImagePreview(URL.createObjectURL(file));
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file?.type.startsWith('image/')) showImagePreview(URL.createObjectURL(file));
+}
+
+function showImagePreview(url) {
+  const dz = document.getElementById('dropZone');
+  dz.style.minHeight = 'auto';
+  dz.innerHTML = `
+    <div class="drop-img-preview">
+      <img src="${url}" alt="Preview">
+      <div class="preview-frame"><div class="frame-inner"></div></div>
+      <div class="preview-label">9:16 Frame</div>
+      <button onclick="clearImage(event)" style="position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:#fff;cursor:pointer;font-size:13px">✕</button>
+    </div>
+  `;
+}
+
+function clearImage(e) {
+  e.stopPropagation();
+  document.getElementById('dropZone').style.minHeight = '220px';
+  document.getElementById('dropZone').innerHTML = `
+    <div id="dropZoneContent">
+      <div class="drop-icon">📤</div>
+      <div style="font-family:Syne;font-weight:700;font-size:14px;color:rgba(255,255,255,.6);margin-bottom:4px">Drop image here</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.3)">JPG, PNG, WEBP · Max 20MB</div>
+    </div>
+  `;
+}
+
+const IMG_MOCK = {
+  hook: "No one knows why everyone abandoned this city in a single night...",
+  script: "This city was thriving.\n\n350,000 people called it home.\n\nThen one day in 1986 — every single one of them disappeared.\n\nNot dead. Not missing.\n\nJust... gone.\n\nPripyat, Ukraine.\n\nThe city that Chernobyl swallowed whole.\n\nThe ferris wheel never made a single rotation.\n\nThe swimming pool, still full.\n\nSupermarkets frozen in time.\n\nNature is slowly taking it all back.\n\nThis is what happens when humans disappear.",
+  titles: [
+    "The City That Was Abandoned In One Night 😨 #history #abandoned",
+    "What Happened To The 350,000 People Who Vanished Overnight?",
+  ],
+  hashtags: ["#abandoned", "#chernobyl", "#pripyat", "#history", "#viral", "#shorts", "#mystery", "#urban"],
+};
+
+function startImgGeneration() {
+  const dropZone = document.getElementById('dropZone');
+  if (!dropZone.querySelector('img')) {
+    const e = document.getElementById('imgError');
+    e.style.display = 'block';
+    e.textContent = '⚠ Please upload an image first.';
+    setTimeout(() => e.style.display = 'none', 3000);
+    return;
+  }
+  animateOverlay(renderImgResults);
+}
+
+function renderImgResults() {
+  document.getElementById('imgPlaceholder').style.display = 'none';
+  const results = document.getElementById('imgResults');
+  results.style.display = 'block';
+
+  const topic = document.getElementById('imgTopic').value.trim() || 'Abandoned city at midnight';
+  document.getElementById('imgHook').textContent = '"' + IMG_MOCK.hook + '"';
+  document.getElementById('imgScript').textContent = IMG_MOCK.script;
+
+  document.getElementById('imgTitles').innerHTML = IMG_MOCK.titles.map(t => `
+    <div class="title-row mb-2">
+      <div class="title-text">${t}</div>
+      <button class="copy-btn" onclick="copyText('${t.replace(/'/g,"\\'")}',this)">⎘</button>
+    </div>
+  `).join('');
+
+  document.getElementById('imgHashtags').innerHTML = IMG_MOCK.hashtags.map(h => `
+    <span class="hashtag">${h}</span>
+  `).join('');
+
+  results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Clipboard ─────────────────────────────────────────────────
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const original = btn.textContent;
+    btn.textContent = '✓';
+    btn.style.color = '#00FFD1';
+    setTimeout(() => { btn.textContent = original; btn.style.color = ''; }, 1500);
+  });
+}
+</script>
+</body>
+</html>
